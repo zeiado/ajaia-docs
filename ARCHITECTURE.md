@@ -8,7 +8,7 @@ Ajaia Docs is a static React SPA plus one Vercel serverless function backed by N
 Browser (React SPA, dist/)
   │  same-origin fetch /functions/v1/app/api/*
   ▼
-Vercel rewrite ──► api/[...path].mjs (Node req/res bridge)
+Vercel rewrite ──► api/index.mjs (Web fetch bridge)
                     │  routes.mjs — all business logic + authorization
                     │  neon.mjs — query-builder adapter over @neondatabase/serverless
                     ▼
@@ -16,7 +16,7 @@ Vercel rewrite ──► api/[...path].mjs (Node req/res bridge)
 ```
 
 - **Frontend:** React 19 + Vite 8, react-router (SPA fallback enabled), Tiptap v3 for rich text, `marked` for Markdown import, sonner for toasts. Content is stored as Tiptap JSON, so formatting round-trips exactly.
-- **Backend:** one Vercel serverless entry at `api/[...path].mjs` bridges Node `req`/`res` to the Web `Request`/`Response` API. `functions/routes.mjs` holds every route and receives an injected `db` client; `functions/neon.mjs` implements that query contract over Neon in production, while `dev/local.mjs` provides the in-memory adapter for local dev/tests.
+- **Backend:** one Vercel serverless entry at `api/index.mjs` adapts Vercel Web `Request`/`Response` objects to the application route contract. `functions/routes.mjs` holds every route and receives an injected `db` client; `functions/neon.mjs` implements that query contract over Neon in production, while `dev/local.mjs` provides the in-memory adapter for local dev/tests.
 - **Local dev:** `node dev/local.mjs` starts the real routes over an in-memory fixture database plus Vite with a same-origin proxy. Nothing in `dev/` is deployed.
 
 ## Data model (`schema.sql`)

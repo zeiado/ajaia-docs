@@ -60,7 +60,7 @@ The app is set up for Vercel + Neon:
 3. Import the repository into Vercel and set `DATABASE_URL` to the Neon connection string.
 4. Deploy and open the generated URL.
 
-Vercel builds the Vite SPA from `dist/` and routes `/functions/v1/app/*` to `api/[...path].mjs`. The Neon adapter uses the same query contract as the local fixture adapter, so `routes.mjs` stays unchanged. See [ARCHITECTURE.md](ARCHITECTURE.md) for the design and [SUBMISSION.md](SUBMISSION.md) for scope notes.
+Vercel builds the Vite SPA from `dist/` and routes `/functions/v1/app/*` to `api/index.mjs`. The Neon adapter uses the same query contract as the local fixture adapter, so `routes.mjs` stays unchanged. See [ARCHITECTURE.md](ARCHITECTURE.md) for the design and [SUBMISSION.md](SUBMISSION.md) for scope notes.
 
 ## Scope cuts (intentional)
 

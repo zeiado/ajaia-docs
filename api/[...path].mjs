@@ -13,31 +13,42 @@ function webHeaders(headers) {
 }
 
 function routeUrl(request) {
-  const url = new URL(request.url, `https://${request.headers.host ?? 'localhost'}`);
+  const host = typeof request.headers?.get === 'function' ? request.headers.get('host') : request.headers?.host;
+  const url = new URL(request.url, `https://${host ?? 'localhost'}`);
   if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
     url.pathname = `/functions/v1/app${url.pathname.slice('/api'.length)}`;
   }
   return url;
 }
 
+function isNodeResponse(response) {
+  return response && typeof response.setHeader === 'function' && typeof response.end === 'function';
+}
+
+async function webRequest(request) {
+  if (request instanceof Request) return new Request(routeUrl(request), request);
+  const init = { method: request.method, headers: webHeaders(request.headers) };
+  if (!['GET', 'HEAD'].includes(request.method)) {
+    init.body = request;
+    init.duplex = 'half';
+  }
+  return new Request(routeUrl(request), init);
+}
+
+async function sendNodeResponse(response, webResponse) {
+  response.statusCode = webResponse.status;
+  for (const [key, value] of webResponse.headers) response.setHeader(key, value);
+  response.end(Buffer.from(await webResponse.arrayBuffer()));
+}
+
 export default async function handler(request, response) {
   try {
-    const init = {
-      method: request.method,
-      headers: webHeaders(request.headers),
-    };
-    if (!['GET', 'HEAD'].includes(request.method)) {
-      init.body = request;
-      init.duplex = 'half';
-    }
-    const webRequest = new Request(routeUrl(request), init);
-    const webResponse = await handle({ request: webRequest });
-    response.statusCode = webResponse.status;
-    for (const [key, value] of webResponse.headers) response.setHeader(key, value);
-    response.end(Buffer.from(await webResponse.arrayBuffer()));
+    const webResponse = await handle({ request: await webRequest(request) });
+    if (isNodeResponse(response)) await sendNodeResponse(response, webResponse);
+    else return webResponse;
   } catch {
-    response.statusCode = 500;
-    response.setHeader('content-type', 'application/json');
-    response.end(JSON.stringify({ error: 'server_error' }));
+    const webResponse = Response.json({ error: 'server_error' }, { status: 500 });
+    if (isNodeResponse(response)) await sendNodeResponse(response, webResponse);
+    else return webResponse;
   }
 }
